@@ -1,8 +1,4 @@
 window.addEventListener("click", function(){
-
-
-
-
   // let elem= document.getElementById("field");
   // let snek= document.getElementById("test");
   // style = window.getComputedStyle(snek);
@@ -13,11 +9,10 @@ window.addEventListener("click", function(){
   // var randnum = numbers[Math.floor(Math.random()*numbers.length)];
   // var randlet = letters[Math.floor(Math.random()*letters.length)];
   // var value = randlet.concat(randnum.toString());
-  // snek.style.gridArea = value;
+  // snek.styles.gridArea = value;
 });
 
 document.onkeydown = checkKey;
-
 function checkKey(e) {
 
   let snek= document.getElementById("test");
@@ -82,10 +77,23 @@ function checkKey(e) {
   };
 
   var value = newChar.concat(newNum.toString());
-
-  snek.style.gridArea = value;
 }
 
+
+function runGame() {
+
+
+
+  setTimeout(function() {
+    snek.style.gridArea = value;
+  }, 1000);
+}
+
+
+let running = true
+while (running) {
+  runGame();
+}
 
 // snake
 

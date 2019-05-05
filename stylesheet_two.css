@@ -44,8 +44,10 @@ body{
   border-radius: 50%;
 }
 
-
-
+.candy-snake{
+  background: #e57a49;
+  border-radius: 10%;
+}
 
 
 

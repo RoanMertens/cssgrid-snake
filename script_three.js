@@ -19,10 +19,8 @@ function calcEmptySpaceGrid(game_field_array, snake_body){
   return game_field_array.filter(x => !snake_body.includes(x));
 }
 
-function displayCandy(candy_current_location, displayed_blocks){
-  displayed_blocks.map( function(block){
-      if (block.id == candy_current_location) { block.setAttribute('class', 'candy'); }
-  });
+function displayCandy(candy_location){
+  candy_location.setAttribute('class', 'candy');
 }
 
 
@@ -93,7 +91,8 @@ function calcSnakeStartLocation(game_field_size){
   const width = Math.round((game_field_size.width-1)/2);
   const snake = [createBlock(height, width),
                  createBlock(height, width-1),
-                 createBlock(height, width-2)]
+                 createBlock(height, width-2),
+                 createBlock(height, width-3)]
   return snake
 }
 
@@ -123,7 +122,10 @@ function removeSnakeTail(snake_body){
 
 function addSnakeHead(snake_body, game_field, snake_head){
   game_field.map( function(block){
-    if (block.id === snake_head){
+    if (block.id === snake_head && block.classList.contains('candy')) {
+      block.setAttribute('class', 'candy-snake');
+      snake_body.unshift(block);
+    } else if (block.id === snake_head){
       block.setAttribute('class', 'snake');
       snake_body.unshift(block);
     }
@@ -138,20 +140,9 @@ function findOppositeDirectionSnakehead(snake_current_direction){
     return reverse_direction[snake_current_direction]
 }
 
-// function displaySnake(snake, displayed_blocks){
-//   displayed_blocks.map( function(block){
-//     snake.map( function(p){
-//       if (block.id === p) {
-//         block.setAttribute('class', 'snake');
-//       // } else if (block.attribute.class === 'snake') {
-//         // block.setAttribute('class', '');
-//       }
-//     });
-//   });
-// }
 
 // expects array of strings, two strings and a hash of integers
-function moveSnake(snake_body, snake_current_direction, snake_banned_direction, game_field_size){ // returns new location snake as array of strings
+function moveSnake(snake_body, snake_current_direction, game_field_size){ // returns new location snake as array of strings
   snake_body = removeSnakeTail(snake_body);
   const snake_head = calcNewLocationSnakehead(snake_body, snake_current_direction, game_field_size);
   snake_body = addSnakeHead(snake_body, game_field, snake_head);
@@ -162,18 +153,27 @@ function moveSnake(snake_body, snake_current_direction, snake_banned_direction, 
 function calcNewLocationSnakehead(snake_body, snake_current_direction, game_field_size){ // returns new location head as string
 
   // sets the axis and direction of the step
-  const axis = snake_current_direction === "up" || snake_current_direction === "down" ? 1 : 2;
-  let direction = snake_current_direction === "down" || snake_current_direction === "right" ? 1 : -1;
-
+  const axis = snake_current_direction === 'up' || snake_current_direction === 'down' ? 1 : 2;
+  let direction = snake_current_direction === 'down' || snake_current_direction === 'right' ? 1 : -1;
   old_head = snake_body[0].id.split("-");
-  old_head[axis] = (parseInt(old_head[axis], 10) + direction).toString();
+
+  if (snake_current_direction === 'up' && old_head[1] === "0"){
+    old_head[axis] = (parseInt(old_head[axis], 10) + (game_field_size.height - 1)).toString();
+  } else if (snake_current_direction === 'down' && old_head[1] === (game_field_size.height-1).toString()){
+    old_head[axis] = (parseInt(old_head[axis], 10) - (game_field_size.height - 1)).toString();
+  } else if (snake_current_direction === 'left' && old_head[2] === "0"){
+    old_head[axis] = (parseInt(old_head[axis], 10) + (game_field_size.height - 1)).toString();
+  } else if (snake_current_direction === 'right' && old_head[2] === (game_field_size.width-1).toString()) {
+    old_head[axis] = (parseInt(old_head[axis], 10) - (game_field_size.height - 1)).toString();
+  } else {
+    old_head[axis] = (parseInt(old_head[axis], 10) + direction).toString();
+  }
+
   let new_head = old_head
-  // console.log(snake_body[1].id.toString());
-  // console.log(new_head);
+
   new_head = new_head;
 
   if (snake_body[1].id === new_head.join("-")){
-
     snake_current_direction = findOppositeDirectionSnakehead(snake_current_direction)
     new_head = calcNewLocationSnakehead(snake_body, snake_current_direction, game_field_size)
     return new_head;
@@ -181,7 +181,6 @@ function calcNewLocationSnakehead(snake_body, snake_current_direction, game_fiel
     return new_head.join("-");
   }
 }
-
 
 // <<<<<<<<<<<................>>>>>>>>>>
 //           setting variable
@@ -198,7 +197,7 @@ const elem = document.getElementById("field");
 // ................
 // let game_running = false;
 // let game_difficulty = 2; //easy1 || medium2 || hard3 || hell4
-const game_field_size = { height:5 , width:5 };
+const game_field_size = { height:10 , width:10 };
 
 // ................
 //  dynamic info
@@ -207,8 +206,7 @@ const game_field_css = calculateGrid(game_field_size, "css");
 const game_field_array = calculateGrid(game_field_size, "array");
 // let snake_body_size = 3 // grows by eating candies
 // let snake_distance_moved = 0 //begint op nul (telt een op met elke loop)
-let snake_current_direction = 'down'
-
+let snake_current_direction = 'right'
 
 // create array active elements
 const game_field = displayGrid(game_field_array, game_field_css, game_field_size, elem);
@@ -219,24 +217,39 @@ const game_field = displayGrid(game_field_array, game_field_css, game_field_size
 const snake_start_location = calcSnakeStartLocation(game_field_size) // (middle field)
 // get active elements from array and create snake body
 let snake_body = createSnake(snake_start_location, game_field);
-snake_body = moveSnake(snake_body, snake_current_direction, game_field_size)
-// snake_body = removeSnakeTail(snake_body);
-// snake_body = addSnakeHead(snake_body, game_field, "snake-2-3");
-// snake_body = removeSnakeTail(snake_body);
-// snake_body = addSnakeHead(snake_body, game_field, "snake-3-3");
-// snake_body = removeSnakeTail(snake_body);
-// snake_body = addSnakeHead(snake_body, game_field, "snake-3-4");
 
 
-// snake_body = moveSnake(snake_body, snake_current_direction, snake_banned_direction, game_field_size);
+  // console.log("hi");
+document.onkeydown = checkKey;
+function checkKey(e) {
+  e = e || window.event;
+  if (e.keyCode == '37') {
+    // left arrow
+    snake_current_direction = 'left'
+  } else if (e.keyCode == '39') {
+    // right arrow
+    snake_current_direction = 'right'
+  } else if (e.keyCode == '38') {
+    // up arrow
+    snake_current_direction = 'up'
+  } else if (e.keyCode == '40') {
+    // down arrow
+    snake_current_direction = 'down'
+  }
+}
+setInterval(function() {
+  snake_body = moveSnake(snake_body, snake_current_direction, game_field_size);
+}, 600);
 
 
-// const game_field_empty_space_array = calcEmptySpaceGrid(game_field_array, snake_body);
-// let snake_current_direction = "right"; //up || right || down || left
-// let snake_banned_direction = findBannedDirectionSnakehead(snake_current_direction)
+
+const game_field_empty_space_array = calcEmptySpaceGrid(game_field_array, snake_body);
 
 
-
+without_snake = calcEmptySpaceGrid(game_field, snake_body)
+random_number = getRandomInt(without_snake.length-1)
+console.log(without_snake[random_number]);
+displayCandy(without_snake[random_number])
 // ................
 // candy info
 // ................

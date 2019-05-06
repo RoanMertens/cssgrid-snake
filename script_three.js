@@ -1,7 +1,31 @@
+
+// <<<<<<<<<<<................>>>>>>>>>>
+//               controls
+// <<<<<<<<<<<................>>>>>>>>>>
+
+// user input
+document.onkeydown = checkKey;
+function checkKey(e) {
+  e = e || window.event;
+  if (e.keyCode == '37') {
+    // left arrow
+    snake_current_direction = 'left'
+  } else if (e.keyCode == '39') {
+    // right arrow
+    snake_current_direction = 'right'
+  } else if (e.keyCode == '38') {
+    // up arrow
+    snake_current_direction = 'up'
+  } else if (e.keyCode == '40') {
+    // down arrow
+    snake_current_direction = 'down'
+  }
+}
+
+
 // <<<<<<<<<<<................>>>>>>>>>>
 //               functions
 // <<<<<<<<<<<................>>>>>>>>>>
-
 
 // ................
 // candy functions
@@ -23,6 +47,12 @@ function displayCandy(candy_location){
   candy_location.setAttribute('class', 'candy');
 }
 
+function createCandy(game_field, snake_body){
+  without_snake = calcEmptySpaceGrid(game_field, snake_body)
+  random_number = getRandomInt(without_snake.length-1)
+  displayCandy(without_snake[random_number]);
+}
+
 
 // ................
 // game functions
@@ -31,7 +61,7 @@ function displayCandy(candy_location){
 // expects integers
 // returns delay between each step as integer
 function calcDelay(game_difficulty, candies_eaten){
-  return 1000/(game_difficulty + (candies_eaten/100))
+  return 1000/(game_difficulty + (candies_eaten/10))
 }
 
 
@@ -91,8 +121,7 @@ function calcSnakeStartLocation(game_field_size){
   const width = Math.round((game_field_size.width-1)/2);
   const snake = [createBlock(height, width),
                  createBlock(height, width-1),
-                 createBlock(height, width-2),
-                 createBlock(height, width-3)]
+                 createBlock(height, width-2)]
   return snake
 }
 
@@ -106,7 +135,7 @@ function createSnake(snake_location, game_field){
       }
     });
   });
-  return new_snake_body
+  return new_snake_body;
 }
 
 
@@ -120,17 +149,26 @@ function removeSnakeTail(snake_body){
   return snake_body;
 }
 
+function growSnake(snake_body){
+  snake_body.push(snake_body[snake_body.length-1]);
+  return snake_body;
+}
+
 function addSnakeHead(snake_body, game_field, snake_head){
+  let candies_eaten = 0
   game_field.map( function(block){
     if (block.id === snake_head && block.classList.contains('candy')) {
       block.setAttribute('class', 'candy-snake');
       snake_body.unshift(block);
+      createCandy(game_field, snake_body);
+      candies_eaten += 1
+      snake_body = growSnake(snake_body);
     } else if (block.id === snake_head){
       block.setAttribute('class', 'snake');
       snake_body.unshift(block);
-    }
-  })
-  return snake_body
+    };
+  });
+  return {snake_body: snake_body, candies_eaten: candies_eaten};
 }
 
 // expects string
@@ -145,8 +183,8 @@ function findOppositeDirectionSnakehead(snake_current_direction){
 function moveSnake(snake_body, snake_current_direction, game_field_size){ // returns new location snake as array of strings
   snake_body = removeSnakeTail(snake_body);
   const snake_head = calcNewLocationSnakehead(snake_body, snake_current_direction, game_field_size);
-  snake_body = addSnakeHead(snake_body, game_field, snake_head);
-  return snake_body;
+  params = addSnakeHead(snake_body, game_field, snake_head);
+  return params;
 }
 
 // expects array of strings, two strings and a hash of integers
@@ -196,7 +234,7 @@ const elem = document.getElementById("field");
 // static'ish' game info
 // ................
 // let game_running = false;
-// let game_difficulty = 2; //easy1 || medium2 || hard3 || hell4
+let game_difficulty = 4; //easy1 || medium2 || hard3 || hell4
 const game_field_size = { height:10 , width:10 };
 
 // ................
@@ -207,6 +245,8 @@ const game_field_array = calculateGrid(game_field_size, "array");
 // let snake_body_size = 3 // grows by eating candies
 // let snake_distance_moved = 0 //begint op nul (telt een op met elke loop)
 let snake_current_direction = 'right'
+let candies_eaten = 0 //starts at 0 and adds one as the snake eats candies
+
 
 // create array active elements
 const game_field = displayGrid(game_field_array, game_field_css, game_field_size, elem);
@@ -218,44 +258,21 @@ const snake_start_location = calcSnakeStartLocation(game_field_size) // (middle 
 // get active elements from array and create snake body
 let snake_body = createSnake(snake_start_location, game_field);
 
+createCandy(game_field, snake_body);
 
-  // console.log("hi");
-document.onkeydown = checkKey;
-function checkKey(e) {
-  e = e || window.event;
-  if (e.keyCode == '37') {
-    // left arrow
-    snake_current_direction = 'left'
-  } else if (e.keyCode == '39') {
-    // right arrow
-    snake_current_direction = 'right'
-  } else if (e.keyCode == '38') {
-    // up arrow
-    snake_current_direction = 'up'
-  } else if (e.keyCode == '40') {
-    // down arrow
-    snake_current_direction = 'down'
-  }
-}
 setInterval(function() {
-  snake_body = moveSnake(snake_body, snake_current_direction, game_field_size);
-}, 600);
+  params = moveSnake(snake_body, snake_current_direction, game_field_size);
+  snake_body = params.snake_body;
+  candies_eaten = candies_eaten + params.candies_eaten;
+  console.log(candies_eaten);
+}, calcDelay(game_difficulty, candies_eaten));
 
 
-
-const game_field_empty_space_array = calcEmptySpaceGrid(game_field_array, snake_body);
-
-
-without_snake = calcEmptySpaceGrid(game_field, snake_body)
-random_number = getRandomInt(without_snake.length-1)
-console.log(without_snake[random_number]);
-displayCandy(without_snake[random_number])
 // ................
 // candy info
 // ................
 // let game_rest_blocks_amount = game_field_empty_space_array.length
 // let random_int = getRandomInt(game_rest_blocks_amount)
-// let candies_eaten = 0 //starts at 0 and adds one as the snake eats candies
 // let candy_current_location = game_field_empty_space_array[random_int];
 
 
